@@ -199,20 +199,99 @@ function animate() {
 }
 animate();
 
-/* --- AUDIO LOGIC CON CORS PROXY --- */
-const PROXY = "https://api.allorigins.win/raw?url=";
+/* --- AUDIO LOGIC CON MÚLTIPLES ESTRATEGIAS --- */
 const API = "https://juicewrldapi.com/juicewrld";
+let songHistory = [];
+let allSongs = [];
+let currentIndex = 0;
+
+// Cargar lista completa de canciones al inicio
+async function loadSongList() {
+    try {
+        // Intentar obtener lista completa de canciones
+        const endpoints = [
+            ${API}/songs/all/,
+            ${API}/songs/,
+            ${API}/radio/songs/
+        ];
+        
+        for (let endpoint of endpoints) {
+            try {
+                const r = await fetch(endpoint, {
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+                const d = await r.json();
+                
+                if (Array.isArray(d) && d.length > 0) {
+                    allSongs = d;
+                    console.log(✅ Loaded ${allSongs.length} songs from ${endpoint});
+                    return true;
+                } else if (d.songs && Array.isArray(d.songs)) {
+                    allSongs = d.songs;
+                    console.log(✅ Loaded ${allSongs.length} songs);
+                    return true;
+                }
+            } catch (e) {
+                console.log(❌ Failed endpoint: ${endpoint});
+                continue;
+            }
+        }
+        return false;
+    } catch(e) {
+        console.error("Error loading song list:", e);
+        return false;
+    }
+}
 
 async function nextSong() {
     try {
-        const r = await fetch(`${PROXY}${encodeURIComponent(API + "/radio/random/")}`);
-        const d = await r.json();
-        const s = d.song || d;
+        let song;
         
-        document.getElementById("title").innerText = s.name || "Unknown";
-        document.getElementById("album").innerText = s.album || "999 Forever";
+        // Estrategia 1: Si tenemos lista completa, usar esa
+        if (allSongs.length > 0) {
+            // Evitar repetir las últimas 10 canciones
+            let attempts = 0;
+            do {
+                currentIndex = Math.floor(Math.random() * allSongs.length);
+                song = allSongs[currentIndex];
+                attempts++;
+            } while (songHistory.includes(song.name) && attempts < 20);
+            
+            songHistory.push(song.name);
+            if (songHistory.length > 10) songHistory.shift();
+            
+        } else {
+            // Estrategia 2: Intentar diferentes endpoints random
+            const randomEndpoints = [
+                ${API}/radio/random/?t=${Date.now()},
+                ${API}/songs/random/?cache=${Math.random()},
+                ${API}/radio/next/?seed=${Math.random()}
+            ];
+            
+            const endpoint = randomEndpoints[Math.floor(Math.random() * randomEndpoints.length)];
+            const r = await fetch(endpoint, {
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                }
+            });
+            const d = await r.json();
+            song = d.song || d;
+        }
         
-        let era = s.era ? (typeof s.era === 'string' ? s.era : s.era.name) : "Unreleased";
+        if (!song || !song.name) {
+            throw new Error("Invalid song data");
+        }
+        
+        console.log("🎵 Playing:", song.name);
+        
+        document.getElementById("title").innerText = song.name;
+        document.getElementById("album").innerText = song.album || "999 Forever";
+        
+        let era = song.era ? (typeof song.era === 'string' ? song.era : song.era.name) : "Unreleased";
         const eras = {"GBGR": "#22c55e", "DRFL": "#3b82f6", "WOD": "#ef4444", "Unreleased": "#a855f7"};
         colorMain = eras[era] || "#a855f7";
         
@@ -222,11 +301,32 @@ async function nextSong() {
         badge.classList.remove("opacity-0");
         document.getElementById("progress").style.backgroundColor = colorMain;
         
-        // Direct audio URL (sin proxy para audio streaming)
-        audio.src = `${API}/files/download/?path=${encodeURIComponent(s.path)}`;
-        audio.play().catch((err) => {
-            console.log("Audio play error:", err);
-        });
+        // Intentar múltiples formatos de URL de audio
+        const audioUrls = [
+            ${API}/files/download/?path=${encodeURIComponent(song.path)},
+            song.url,
+            song.audio_url,
+            song.preview_url
+        ].filter(Boolean);
+        
+        let audioLoaded = false;
+        for (let url of audioUrls) {
+            try {
+                audio.src = url;
+                await audio.play();
+                audioLoaded = true;
+                break;
+            } catch (e) {
+                console.log(Failed to load audio from: ${url});
+                continue;
+            }
+        }
+        
+        if (!audioLoaded) {
+            console.warn("⚠️ Could not load audio, skipping...");
+            setTimeout(nextSong, 1000);
+        }
+        
     } catch(e) { 
         console.error("Error loading song:", e);
         setTimeout(nextSong, 2000); 
@@ -234,7 +334,7 @@ async function nextSong() {
 }
 
 const eq = document.getElementById("eq");
-for(let i=0; i<15; i++) eq.innerHTML += `<div class="flex-1 bg-white/10 rounded-t-full"></div>`;
+for(let i=0; i<15; i++) eq.innerHTML += <div class="flex-1 bg-white/10 rounded-t-full"></div>;
 setInterval(() => {
     eq.querySelectorAll('div').forEach((b, i) => {
         const h = audio.paused ? 10 : (20 + Math.abs(Math.sin(Date.now()/150 + i)) * 80);
@@ -244,7 +344,12 @@ setInterval(() => {
 
 audio.ontimeupdate = () => { if(audio.duration) document.getElementById("progress").style.width = (audio.currentTime/audio.duration)*100 + "%"; };
 audio.onended = nextSong;
-nextSong();
+
+// Inicializar
+(async function init() {
+    await loadSongList();
+    nextSong();
+})();
 </script>
 </body>
 </html>
