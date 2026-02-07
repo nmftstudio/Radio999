@@ -138,8 +138,6 @@ setInterval(() => { if(items.length < 15) items.push(new RainItem(Math.random() 
 rainCanvas.addEventListener('touchstart', (e) => {
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
-    
-    // Detectar si tocamos un objeto inmediatamente
     handleTap(e.touches[0]);
 }, {passive: true});
 
@@ -150,13 +148,11 @@ rainCanvas.addEventListener('touchend', (e) => {
     let diffX = touchEndX - touchStartX;
     let diffY = touchEndY - touchStartY;
 
-    // Si el movimiento es mayormente horizontal y supera un umbral, pasamos tema
     if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY)) {
         nextSong();
     }
 }, {passive: true});
 
-// Para Mouse (PC)
 rainCanvas.addEventListener('mousedown', (e) => {
     touchStartX = e.clientX;
     handleTap(e);
@@ -203,28 +199,42 @@ function animate() {
 }
 animate();
 
-/* --- AUDIO LOGIC --- */
+/* --- AUDIO LOGIC CON CORS PROXY --- */
+const PROXY = "https://api.allorigins.win/raw?url=";
 const API = "https://juicewrldapi.com/juicewrld";
+
 async function nextSong() {
     try {
-        const r = await fetch(${API}/radio/random/);
+        const r = await fetch(`${PROXY}${encodeURIComponent(API + "/radio/random/")}`);
         const d = await r.json();
         const s = d.song || d;
-        document.getElementById("title").innerText = s.name;
+        
+        document.getElementById("title").innerText = s.name || "Unknown";
         document.getElementById("album").innerText = s.album || "999 Forever";
+        
         let era = s.era ? (typeof s.era === 'string' ? s.era : s.era.name) : "Unreleased";
         const eras = {"GBGR": "#22c55e", "DRFL": "#3b82f6", "WOD": "#ef4444", "Unreleased": "#a855f7"};
         colorMain = eras[era] || "#a855f7";
+        
         const badge = document.getElementById("era-badge");
-        badge.innerText = era; badge.style.backgroundColor = colorMain; badge.classList.remove("opacity-0");
+        badge.innerText = era; 
+        badge.style.backgroundColor = colorMain; 
+        badge.classList.remove("opacity-0");
         document.getElementById("progress").style.backgroundColor = colorMain;
-        audio.src = ${API}/files/download/?path=${encodeURIComponent(s.path)};
-        audio.play().catch(()=>{});
-    } catch(e) { setTimeout(nextSong, 2000); }
+        
+        // Direct audio URL (sin proxy para audio streaming)
+        audio.src = `${API}/files/download/?path=${encodeURIComponent(s.path)}`;
+        audio.play().catch((err) => {
+            console.log("Audio play error:", err);
+        });
+    } catch(e) { 
+        console.error("Error loading song:", e);
+        setTimeout(nextSong, 2000); 
+    }
 }
 
 const eq = document.getElementById("eq");
-for(let i=0; i<15; i++) eq.innerHTML += <div class="flex-1 bg-white/10 rounded-t-full"></div>;
+for(let i=0; i<15; i++) eq.innerHTML += `<div class="flex-1 bg-white/10 rounded-t-full"></div>`;
 setInterval(() => {
     eq.querySelectorAll('div').forEach((b, i) => {
         const h = audio.paused ? 10 : (20 + Math.abs(Math.sin(Date.now()/150 + i)) * 80);
