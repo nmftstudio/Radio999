@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -37,9 +38,73 @@ body {
   pointer-events: auto;
 }
 .retro-font { font-family: 'Courier New', Courier, monospace; }
+
+/* PLAY BUTTON OVERLAY */
+#playOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  backdrop-filter: blur(10px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  cursor: pointer;
+  transition: opacity 0.5s;
+}
+#playOverlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.play-btn {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #a855f7, #8B5CF6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 40px rgba(168, 85, 247, 0.6);
+  animation: pulsate 2s ease infinite;
+  transition: transform 0.2s;
+}
+.play-btn:active {
+  transform: scale(0.95);
+}
+.play-btn::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 30px solid white;
+  border-top: 20px solid transparent;
+  border-bottom: 20px solid transparent;
+  margin-left: 8px;
+}
+@keyframes pulsate {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(168, 85, 247, 0.6); }
+  50% { transform: scale(1.05); box-shadow: 0 0 60px rgba(168, 85, 247, 0.8); }
+}
+.start-text {
+  font-size: 24px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #a855f7, #8B5CF6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
 </style>
 </head>
 <body>
+
+<!-- PLAY OVERLAY -->
+<div id="playOverlay">
+  <div class="play-btn"></div>
+  <div class="start-text">Toca para empezar</div>
+</div>
 
 <canvas id="rainCanvas"></canvas>
 
@@ -78,11 +143,20 @@ const rainCtx = rainCanvas.getContext("2d");
 const mainCanvas = document.getElementById("mainCanvas");
 const mainCtx = mainCanvas.getContext("2d");
 const audio = document.getElementById("audio");
+const playOverlay = document.getElementById("playOverlay");
 
 let colorMain = "#a855f7";
 let pulse = 0, flashEffect = 0;
 let items = [];
 let currentScore = 0;
+let isStarted = false;
+
+/* --- PLAY OVERLAY --- */
+playOverlay.addEventListener('click', function() {
+  this.classList.add('hidden');
+  isStarted = true;
+  audio.play().catch(e => console.log('Play error:', e));
+});
 
 /* --- SWIPE ENGINE --- */
 let touchStartX = 0;
@@ -216,7 +290,11 @@ async function nextSong() {
         badge.innerText = era; badge.style.backgroundColor = colorMain; badge.classList.remove("opacity-0");
         document.getElementById("progress").style.backgroundColor = colorMain;
         audio.src = `${API}/files/download/?path=${encodeURIComponent(s.path)}`;
-        audio.play().catch(()=>{});
+        
+        // Solo auto-play si ya se inició la app
+        if(isStarted) {
+            audio.play().catch(()=>{});
+        }
     } catch(e) { setTimeout(nextSong, 2000); }
 }
 
@@ -231,6 +309,8 @@ setInterval(() => {
 
 audio.ontimeupdate = () => { if(audio.duration) document.getElementById("progress").style.width = (audio.currentTime/audio.duration)*100 + "%"; };
 audio.onended = nextSong;
+
+// Cargar la primera canción (pero no reproducir hasta que el usuario toque)
 nextSong();
 </script>
 </body>
