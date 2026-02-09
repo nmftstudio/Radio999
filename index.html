@@ -9,12 +9,25 @@
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body class="bg-black h-screen w-screen overflow-hidden flex flex-col">
 
-  <!-- PLAY OVERLAY -->
-  <div id="playOverlay">
-    <div class="play-btn"></div>
-    <div class="start-text">Toca para empezar</div>
+  <!-- INTRO SCREEN (Forced Visibility) -->
+  <div id="introScreen"
+    style="position: fixed; inset: 0; background: #2d1b00; z-index: 999999; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+    <div class="package-seal">
+      <div class="package-label">
+        <div style="font-size: 48px; font-weight: 900; margin-bottom: 10px;">999</div>
+        <div style="font-size: 12px; letter-spacing: 3px; opacity: 0.7;">RADIO PACKAGE</div>
+        <div style="font-size: 10px; margin-top: 15px; opacity: 0.5;">TAP TO UNWRAP</div>
+      </div>
+    </div>
+    <!-- Pre-load texture to ensure background render -->
+    <div
+      style="position: absolute; inset: 0; background: linear-gradient(135deg, #2d1b00 0%, #5a3a1a 25%, #4a2f12 50%, #3d2510 75%, #2d1b00 100%); z-index: -1;">
+    </div>
+    <div
+      style="position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px); z-index: -1;">
+    </div>
   </div>
 
   <!-- GAME AREA (Top 75%) -->
@@ -33,7 +46,7 @@
       </div>
 
       <div class="relative flex items-center justify-center w-full grow">
-        <canvas id="mainCanvas" width="300" height="300"></canvas>
+        <canvas id="mainCanvas" width="400" height="400" class="max-w-full h-auto"></canvas>
       </div>
 
       <!-- EQ Container -->
@@ -53,32 +66,16 @@
     </div>
   </div>
 
-  <!-- HISTORY PANEL (Overlay) -->
-  <div id="history-panel"
-    class="absolute inset-x-0 bottom-[25%] top-[10%] bg-black/90 backdrop-blur-xl z-40 transform translate-y-[120%] transition-transform duration-300 ease-out flex flex-col p-6 rounded-t-3xl border-t border-white/10">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold text-white tracking-widest">HISTORIAL</h2>
-      <button id="closeHistory" class="text-white/50 hover:text-white p-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-    <div id="history-list" class="overflow-y-auto flex-1 space-y-3 pr-2">
-      <!-- Items injected by JS -->
-      <p class="text-white/30 text-sm text-center italic mt-10">Aún no has escuchado canciones...</p>
-    </div>
-  </div>
-
   <!-- CONTROLS AREA (Bottom 25%) -->
   <div id="controls-area"
     class="w-full h-[25%] bg-black/40 backdrop-blur-xl border-t border-white/10 flex flex-col items-center justify-center p-4 relative z-50">
 
-    <!-- Main Controls -->
-    <div class="flex items-center justify-center gap-8 w-full max-w-md">
-      <!-- Prev / History -->
+    <!-- Volume & Controls Container -->
+    <div class="flex items-center justify-between w-full max-w-md px-4 gap-4">
+
+      <!-- History Button -->
       <button id="historyBtn"
-        class="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all active:scale-95">
+        class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all active:scale-95">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white/70" fill="none" viewBox="0 0 24 24"
           stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -86,28 +83,52 @@
         </svg>
       </button>
 
-      <!-- Play / Pause -->
-      <button id="playPauseBtn"
-        class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-600/30 transition-all active:scale-95 group">
-        <svg id="playIcon" class="h-8 w-8 text-white ml-1 hidden" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M8 5v14l11-7z" />
-        </svg>
-        <svg id="pauseIcon" class="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-        </svg>
-      </button>
+      <!-- Main Play/Next -->
+      <div class="flex items-center gap-6">
+        <!-- Play / Pause -->
+        <button id="playPauseBtn"
+          class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-600/30 transition-all active:scale-95 group">
+          <svg id="playIcon" class="h-6 w-6 text-white ml-1 hidden" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          <svg id="pauseIcon" class="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+          </svg>
+        </button>
 
-      <!-- Next -->
-      <button id="nextBtn"
-        class="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all active:scale-95">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white/70" fill="none" viewBox="0 0 24 24"
-          stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
+        <!-- Next -->
+        <button id="nextBtn"
+          class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all active:scale-95">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white/70" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Volume Control (Visual Only per revert) -->
+      <div class="w-10 text-center opacity-50">
+        <!-- Placeholder or remove if fully reverted. Keeping symmetry. -->
+      </div>
+
     </div>
 
     <p class="text-[10px] text-white/30 mt-4 uppercase tracking-widest">999 RADIO CONTROLS</p>
+  </div>
+
+  <!-- HISTORY PANEL (Overlay) -->
+  <div id="history-panel"
+    class="absolute inset-x-0 bottom-0 top-[20%] bg-black/95 backdrop-blur-xl z-[60] transform translate-y-[120%] transition-transform duration-300 ease-out flex flex-col p-6 rounded-t-3xl border-t border-purple-500/30">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-bold text-white tracking-widest flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+        HISTORIAL
+      </h2>
+    </div>
+    <div id="history-list" class="overflow-y-auto flex-1 space-y-3 pr-2 scrollbar-hide">
+      <!-- Items injected by JS -->
+      <p class="text-white/30 text-sm text-center italic mt-10">Aún no has escuchado canciones...</p>
+    </div>
   </div>
 
   <audio id="audio" crossorigin="anonymous"></audio>
