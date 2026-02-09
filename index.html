@@ -17,39 +17,97 @@
     <div class="start-text">Toca para empezar</div>
   </div>
 
-  <canvas id="rainCanvas"></canvas>
+  <!-- GAME AREA (Top 75%) -->
+  <div id="game-area" class="relative w-full h-[75%] flex items-center justify-center overflow-hidden">
+    <canvas id="rainCanvas" class="absolute inset-0 z-50"></canvas>
 
-  <div
-    class="glass w-[92%] max-w-sm h-[80vh] p-8 flex flex-col justify-between items-center text-center animate-fade-in-down">
-    <div class="w-full">
-      <div id="era-badge"
-        class="inline-block bg-purple-600 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest mb-2 opacity-0 transition-all animate-scale-in">
-        LOADING...
+    <div
+      class="glass w-[92%] max-w-sm h-[90%] p-6 flex flex-col justify-between items-center text-center animate-fade-in-down z-10">
+      <div class="w-full">
+        <div id="era-badge"
+          class="inline-block bg-purple-600 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest mb-2 opacity-0 transition-all animate-scale-in">
+          LOADING...
+        </div>
+        <h1 id="title" class="text-2xl font-black truncate px-2 animate-glow-pulse">999 Inferno</h1>
+        <p id="album" class="text-purple-400/50 text-xs italic mt-1 animate-slide-in-right">Sintonizando...</p>
       </div>
-      <h1 id="title" class="text-2xl font-black truncate px-2 animate-glow-pulse">999 Inferno</h1>
-      <p id="album" class="text-purple-400/50 text-xs italic mt-1 animate-slide-in-right">Sintonizando...</p>
+
+      <div class="relative flex items-center justify-center w-full grow">
+        <canvas id="mainCanvas" width="300" height="300"></canvas>
+      </div>
+
+      <!-- EQ Container -->
+      <div id="eq" class="flex items-end justify-center gap-1.5 h-12 w-full px-4 mb-4 animate-fade-in-up"></div>
+
+      <div class="w-full animate-fade-in-up" style="animation-delay: 0.4s;">
+        <div class="relative w-full bg-white/5 h-1 rounded-full overflow-hidden mb-4">
+          <div id="progress" class="absolute top-0 left-0 bg-purple-500 h-full w-0 transition-all shadow-lg"
+            style="box-shadow: 0 0 15px rgba(168, 85, 247, 0.7);"></div>
+        </div>
+        <div
+          class="flex justify-between items-center px-2 py-1 border-t border-white/10 retro-font text-[10px] animate-color-shift">
+          <div class="text-purple-400">HIGH: <span id="score-val" class="text-white text-xs">000000</span></div>
+          <div class="text-yellow-500">BEST: <span id="best-val" class="text-white text-xs">000000</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY PANEL (Overlay) -->
+  <div id="history-panel"
+    class="absolute inset-x-0 bottom-[25%] top-[10%] bg-black/90 backdrop-blur-xl z-40 transform translate-y-[120%] transition-transform duration-300 ease-out flex flex-col p-6 rounded-t-3xl border-t border-white/10">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-bold text-white tracking-widest">HISTORIAL</h2>
+      <button id="closeHistory" class="text-white/50 hover:text-white p-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div id="history-list" class="overflow-y-auto flex-1 space-y-3 pr-2">
+      <!-- Items injected by JS -->
+      <p class="text-white/30 text-sm text-center italic mt-10">Aún no has escuchado canciones...</p>
+    </div>
+  </div>
+
+  <!-- CONTROLS AREA (Bottom 25%) -->
+  <div id="controls-area"
+    class="w-full h-[25%] bg-black/40 backdrop-blur-xl border-t border-white/10 flex flex-col items-center justify-center p-4 relative z-50">
+
+    <!-- Main Controls -->
+    <div class="flex items-center justify-center gap-8 w-full max-w-md">
+      <!-- Prev / History -->
+      <button id="historyBtn"
+        class="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all active:scale-95">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white/70" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+
+      <!-- Play / Pause -->
+      <button id="playPauseBtn"
+        class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-600/30 transition-all active:scale-95 group">
+        <svg id="playIcon" class="h-8 w-8 text-white ml-1 hidden" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M8 5v14l11-7z" />
+        </svg>
+        <svg id="pauseIcon" class="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+        </svg>
+      </button>
+
+      <!-- Next -->
+      <button id="nextBtn"
+        class="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all active:scale-95">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white/70" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
     </div>
 
-    <div class="relative flex items-center justify-center w-full grow">
-      <canvas id="mainCanvas" width="350" height="350"></canvas>
-    </div>
-
-    <!-- EQ Container: Children are now generated by JS -->
-    <div id="eq" class="flex items-end justify-center gap-1.5 h-16 w-full px-4 mb-8 animate-fade-in-up"></div>
-
-    <div class="w-full animate-fade-in-up" style="animation-delay: 0.4s;">
-      <div class="relative w-full bg-white/5 h-1 rounded-full overflow-hidden mb-6">
-        <div id="progress" class="absolute top-0 left-0 bg-purple-500 h-full w-0 transition-all shadow-lg"
-          style="box-shadow: 0 0 15px rgba(168, 85, 247, 0.7);"></div>
-      </div>
-      <div
-        class="flex justify-between items-center px-2 py-2 border-t border-white/10 retro-font text-[10px] animate-color-shift">
-        <div class="text-purple-400">HIGH: <span id="score-val" class="text-white text-xs">000000</span></div>
-        <div class="text-yellow-500">BEST: <span id="best-val" class="text-white text-xs">000000</span></div>
-      </div>
-      <p class="text-[8px] text-white/20 mt-2 uppercase tracking-widest italic hover:text-white/40 transition-all">
-        Desliza horizontal para pasar tema</p>
-    </div>
+    <p class="text-[10px] text-white/30 mt-4 uppercase tracking-widest">999 RADIO CONTROLS</p>
   </div>
 
   <audio id="audio" crossorigin="anonymous"></audio>
